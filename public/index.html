@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Meta AI Chatbot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { margin:0; font-family:sans-serif; background:#ece5dd; }
+    .chat-container {
+      max-width:600px; height:100vh; margin:auto;
+      display:flex; flex-direction:column; background:#fff;
+    }
+    .header {
+      background:#075e54; color:white; padding:15px;
+      display:flex; align-items:center;
+    }
+    .header img { width:40px; height:40px; border-radius:50%; }
+    .header .title { margin-left:10px; font-size:18px; font-weight:bold; }
+    .messages {
+      flex:1; padding:15px; overflow-y:auto;
+      background:url('https://i.imgur.com/q8PxMwh.png') center/cover;
+      display:flex; flex-direction:column;
+    }
+    .message {
+      max-width:75%; margin:6px 0; padding:10px 15px;
+      border-radius:10px; white-space:pre-wrap; line-height:1.4;
+    }
+    .user { align-self:flex-end; background:#dcf8c6; }
+    .bot { align-self:flex-start; background:#fff; border:1px solid #ccc; }
+    .bot img { max-width:250px; border-radius:10px; margin-top:8px; }
+    .input-area {
+      display:flex; padding:10px; background:#f0f0f0;
+    }
+    .input-area input {
+      flex:1; padding:12px; border:none; border-radius:20px;
+      outline:none; font-size:16px;
+    }
+    .input-area button {
+      margin-left:10px; padding:0 18px;
+      border:none; border-radius:20px;
+      background:#075e54; color:#fff; font-weight:bold; cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="chat-container">
+    <div class="header">
+      <img src="https://i.imgur.com/1hG4Q8P.png" alt="Meta AI" />
+      <div class="title">Meta AI</div>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="input-area">
+      <input type="text" id="input" placeholder="Ask anything or try: image: a dog surfing" onkeydown="if(event.key==='Enter') send()" />
+      <button onclick="send()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    async function send() {
+      const input = document.getElementById('input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendMessage(text, 'user');
+      input.value = '';
+
+      const typing = document.createElement('div');
+      typing.className = 'message bot';
+      typing.id = 'typing';
+      typing.innerText = 'Meta AI is typing...';
+      document.getElementById('messages').appendChild(typing);
+      scrollToBottom();
+
+      try {
+        let response;
+        if (text.toLowerCase().startsWith('image:')) {
+          response = await fetch('/api/image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: text.slice(6).trim() })
+          });
+          const data = await response.json();
+          appendMessage('Here is your image:', 'bot', data.url);
+        } else {
+          response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: text })
+          });
+          const data = await response.json();
+          appendMessage(data.reply, 'bot');
+        }
+      } catch (err) {
+        appendMessage('⚠️ Meta AI could not respond. Please check your server.', 'bot');
+      } finally {
+        const typingDiv = document.getElementById('typing');
+        if (typingDiv) typingDiv.remove();
+      }
+    }
+
+    function appendMessage(text, sender, imageUrl = null) {
+      const msg = document.createElement('div');
+      msg.className = 'message ' + sender;
+      if (imageUrl) {
+        msg.innerHTML = `${text}<br><img src="${imageUrl}" alt="Generated Image" />`;
+      } else {
+        msg.textContent = text;
+      }
+      document.getElementById('messages').appendChild(msg);
+      scrollToBottom();
+    }
+
+    function scrollToBottom() {
+      const messages = document.getElementById('messages');
+      messages.scrollTop = messages.scrollHeight;
+    }
+  </script>
+
+</body>
+</html>
