@@ -1,0 +1,12 @@
+{
+  "name": "meta-ai-chatbot",
+  "version": "1.0.0",
+  "main": "api/index.js",
+  "scripts": {
+    "start": "node api/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "openai": "^4.5.0"
+  }
+}
